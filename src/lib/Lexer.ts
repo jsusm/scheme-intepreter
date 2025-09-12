@@ -30,7 +30,7 @@ export class Lexer {
 		[/^[+-]?\d+\.\d*/, 'number'],
 		[/^[+-]?\d+/, 'number'],
 		[/^"[^"]*"/, 'string'],
-		[/^[a-zA-Z-\+_\/\?\!\~{}\[\]\*=><][a-zA-Z-\+_\/\?\!\~{}\[\]\*=><\d]*/, 'symbol'],
+		[/^[a-zA-Z-\+_\/\?\!\~{}\[\]\*=><][a-zA-Z-\+_\/\?\!\~{}\[\]\*=><\d;]*/, 'symbol'],
 	]
 
 	constructor(input: string) {
@@ -71,7 +71,7 @@ export class Lexer {
 				}
 			}
 		}
-		return { type: 'Unexpected', value: 'Unexpected' }
+		return { type: 'Unexpected', value: text[0] }
 	}
 
 	lookahead(offset = 0): BareTokenType {
@@ -81,6 +81,17 @@ export class Lexer {
 		}
 		if (token.type === 'EOF' || token.type === 'Unexpected') {
 			return token
+		}
+		return token
+	}
+
+	eatAll(): BareTokenType {
+		const token = this.nextToken()
+		this.cursor += token.value.length
+		this.col += token.value.length
+		if (token.type == 'eol' || token.type == 'comment') {
+			this.col = 0;
+			this.line++;
 		}
 		return token
 	}
