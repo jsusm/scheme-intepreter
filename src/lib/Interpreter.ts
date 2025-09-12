@@ -157,6 +157,34 @@ export class Interpreter {
 					return { type: 'symbol', value: 'true' }
 				}
 			},
+			'>': {
+				params: [2],
+				fn: (params) => {
+					if (params[0].type == 'number' && params[1].type == 'number') {
+						if (params[0].value > params[1].value) {
+							return { type: 'symbol', value: 'true' }
+						} else {
+							return { type: 'symbol', value: 'false' }
+						}
+					} else {
+						throw Error("Can only compare numbers")
+					}
+				}
+			},
+			'<': {
+				params: [2],
+				fn: (params) => {
+					if (params[0].type == 'number' && params[1].type == 'number') {
+						if (params[0].value < params[1].value) {
+							return { type: 'symbol', value: 'true' }
+						} else {
+							return { type: 'symbol', value: 'false' }
+						}
+					} else {
+						throw Error("Can only compare numbers")
+					}
+				}
+			},
 			'and': {
 				params: 2,
 				fn: (params) => {

@@ -30,7 +30,7 @@ export class Lexer {
 		[/^[+-]?\d+\.\d*/, 'number'],
 		[/^[+-]?\d+/, 'number'],
 		[/^"[^"]*"/, 'string'],
-		[/^[a-zA-Z-\+_\/\?\!\~{}\[\]\*=><]+/, 'symbol'],
+		[/^[a-zA-Z-\+_\/\?\!\~{}\[\]\*=><][a-zA-Z-\+_\/\?\!\~{}\[\]\*=><\d]*/, 'symbol'],
 	]
 
 	constructor(input: string) {
