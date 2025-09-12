@@ -1,14 +1,24 @@
-export type TokenType = {
+export type BareTokenType = {
 	type: string,
 	value: string,
+}
+export type TokenType = BareTokenType & {
+	columnStart: number
+	columnEnd: number
+	line: number
 }
 
 export class Lexer {
 	input: string;
 	cursor = 0;
+	line = 0;
+	col = 0;
 
 	tokens: [string | RegExp, string][] = [
-		[/^\s+/, 'whitespace'],
+		[/^\;;.*\n/, 'comment'],
+		[/^\;;.*$/, 'comment'],
+		[/^\n+/, 'eol'],
+		[/^[\f\r\t\v\u0020\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]+/, 'whitespace'],
 		['(', 'punctuation'],
 		[')', 'punctuation'],
 		['define', 'keyword'],
@@ -17,8 +27,8 @@ export class Lexer {
 		['begin', 'keyword'],
 		['set', 'keyword'],
 		['\'', 'punctuation'],
-		[/^\d+\.\d*/, 'number'],
-		[/^\d+/, 'number'],
+		[/^[+-]?\d+\.\d*/, 'number'],
+		[/^[+-]?\d+/, 'number'],
 		[/^"[^"]*"/, 'string'],
 		[/^[a-zA-Z-\+_\/\?\!\~{}\[\]\*=><]+/, 'symbol'],
 	]
@@ -32,7 +42,7 @@ export class Lexer {
 		return this.cursor + offset >= this.input.length
 	}
 
-	nextToken(offset = 0): TokenType {
+	nextToken(offset = 0): BareTokenType {
 		if (this.eof(offset)) {
 			return { type: 'EOF', value: 'EOF' }
 		}
@@ -64,9 +74,9 @@ export class Lexer {
 		return { type: 'Unexpected', value: 'Unexpected' }
 	}
 
-	lookahead(offset = 0): TokenType {
+	lookahead(offset = 0): BareTokenType {
 		const token = this.nextToken(offset)
-		if (token.type == 'whitespace') {
+		if (token.type == 'whitespace' || token.type == 'eol' || token.type == 'comment') {
 			return this.lookahead(offset + token.value.length)
 		}
 		if (token.type === 'EOF' || token.type === 'Unexpected') {
@@ -78,9 +88,15 @@ export class Lexer {
 	eat(): TokenType {
 		const token = this.nextToken()
 		this.cursor += token.value.length
+		this.col += token.value.length
+		if (token.type == 'eol' || token.type == 'comment') {
+			this.col = 0;
+			this.line++;
+			return this.eat()
+		}
 		if (token.type == 'whitespace') {
 			return this.eat()
 		}
-		return token;
+		return { columnStart: this.col - token.value.length, columnEnd: this.col, line: this.line, ...token };
 	}
 }

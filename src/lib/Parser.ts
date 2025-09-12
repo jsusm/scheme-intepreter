@@ -1,4 +1,14 @@
-import { Lexer, type TokenType } from "./Lexer";
+import { Lexer, type BareTokenType, type TokenType } from "./Lexer";
+
+export class ParserError extends Error {
+	name = "ParserError";
+	token: TokenType;
+	constructor(msg: string, token: TokenType) {
+		super(msg)
+		this.token = token
+		this.message = `Error: ${this.name}, ${msg}, at line: ${token.line}, col: ${token.columnStart}`
+	}
+}
 
 export type SymbolNode = {
 	type: "symbol",
@@ -69,8 +79,8 @@ export class Parser {
 	 *   sExpression Program
 	 *
 	 * sExpressions::
-	 *  (Identifier Parameters)
-	 *  (Identifier)
+	 *  (symbol Parameters)
+	 *  (symbol)
 	 *  (lambda arguments body)
 	 *  (define name value)
 	 *  (define (name arguments) body)
@@ -120,7 +130,7 @@ export class Parser {
 
 	/*  Return true if a token has a specific type and an specific value
 	*/
-	private assertToken(token: TokenType, type: string, value?: string) {
+	private assertToken(token: BareTokenType, type: string, value?: string) {
 		if (value) {
 			return token.type == type && token.value == value;
 		} else {
@@ -128,19 +138,13 @@ export class Parser {
 		}
 	}
 
-	/*  Return true if a token type belongs to the array of classes
-	*/
-	private assertTokenClasses(token: TokenType, types: string[]) {
-		return types.includes(token.type)
-	}
-
 	/* Throw errors if we encounter End of file token
 	*/
-	private assertEof(token: TokenType) {
-		if (token.type == 'EOF') {
-			throw Error("Unexpected End of File")
-		}
-	}
+	// private assertEof(token: TokenType) {
+	// 	if (token.type == 'EOF') {
+	// 		throw new ParserError("Unexpected End of File", token)
+	// 	}
+	// }
 
 
 	/* Starting point to get the AST from the input
@@ -159,40 +163,45 @@ export class Parser {
 		return expressions;
 	}
 
-	private sExpression(): StatementNode {
+	private openParenthesis() {
 		let t = this.lex.eat()
 		if (!(t.type == 'punctuation' && t.value == '(')) {
-			throw SyntaxError(`Unexpected Token: ${t.value}`)
+			throw new ParserError(`Unexpected Token: ${t.value}, expectin '('`, t)
 		}
+	}
+	private closeParenthesis() {
+		let t = this.lex.eat()
+		if (!(t.type == 'punctuation' && t.value == ')')) {
+			throw new ParserError(`Unexpected Token: ${t.value}, expectin ')'`, t)
+		}
+	}
+
+	private sExpression(): StatementNode {
+		this.openParenthesis()
 
 		const identifier = this.lex.eat()
 		if (!(identifier.type == 'keyword' || identifier.type == 'symbol')) {
 			throw SyntaxError(`Unexpected token: ${identifier.value}`)
 		}
 		if (identifier.type == 'keyword') {
-			if (identifier.value == 'lambda') {
-				return this.lambda()
+			switch (identifier.value) {
+				case 'lambda':
+					return this.lambda()
+				case 'define':
+					return this.define()
+				case 'if':
+					return this.conditional()
+				case 'begin':
+					return this.begin()
+				case 'set':
+					return this.set()
+				default:
+					throw new ParserError(`Keyword not supported ${identifier.value}`, identifier)
 			}
-			if (identifier.value == 'define') {
-				return this.define()
-			}
-			if (identifier.value == 'if') {
-				return this.conditional()
-			}
-			if (identifier.value == 'begin') {
-				return this.begin()
-			}
-			if (identifier.value == 'set') {
-				return this.set()
-			}
-
 		}
 		const parameters = this.Parameters()
 
-		t = this.lex.eat()
-		if (!this.assertToken(t, 'punctuation', ')')) { // consume the ) character
-			throw SyntaxError(`Unexpected token: ${t.value} waiting )`)
-		}
+		this.closeParenthesis()
 
 		return { type: 'sExpression', identifier: { type: 'symbol', value: identifier.value }, parameters }
 	}
@@ -206,25 +215,27 @@ export class Parser {
 		return expressions
 	}
 
-	private set(): SetNode {
+	private symbol(): SymbolNode {
 		const sym = this.lex.eat()
 		if (!this.assertToken(sym, 'symbol')) {
-			throw SyntaxError(`Unexpected token: ${sym.value}, expecting a symbol`)
+			throw new ParserError(`Unexpected token: ${sym.value}, expecting a symbol`, sym)
 		}
+		return { type: 'symbol', value: sym.value }
+	}
+
+	private set(): SetNode {
+		const sym = this.symbol()
 		let value: ASTNode
+
 		if (this.assertToken(this.lex.lookahead(), 'punctuation', '(')) {
 			value = this.sExpression()
 		} else {
 			value = this.literal()
 		}
 
+		this.closeParenthesis() // comsume remainding ')' character
 
-		let t = this.lex.eat() // comsume remainding ')' character
-		if (!this.assertToken(t, 'punctuation', ')')) {
-			throw SyntaxError(`Unexpected token: ${t.value}`)
-		}
-
-		return { type: 'set', name: { type: 'symbol', value: sym.value }, value: value }
+		return { type: 'set', name: sym, value: value }
 	}
 
 	private parseValue(): ASTNode {
@@ -239,10 +250,7 @@ export class Parser {
 	private begin(): BeginNode {
 		const body = this.body()
 
-		let t = this.lex.eat() // comsume remainding ')' character
-		if (!this.assertToken(t, 'punctuation', ')')) {
-			throw SyntaxError(`Unexpected token: ${t.value}`)
-		}
+		this.closeParenthesis()
 
 		return { type: 'begin', body }
 	}
@@ -252,10 +260,7 @@ export class Parser {
 		const then = this.parseValue()
 		const _else = this.parseValue()
 
-		let t = this.lex.eat() // comsume remainding ')' character
-		if (!this.assertToken(t, 'punctuation', ')')) {
-			throw SyntaxError(`Unexpected token: ${t.value}`)
-		}
+		this.closeParenthesis()
 
 		return { type: 'conditional', condition, then, else: _else }
 	}
@@ -263,27 +268,23 @@ export class Parser {
 	private define(): DefineNode {
 		if (this.assertToken(this.lex.lookahead(), 'punctuation', '(')) {
 			// define a function
-			this.lex.eat()
-			let sym = this.lex.eat()
-			if (!this.assertToken(sym, 'symbol')) {
-				throw SyntaxError(`Unexpected token: ${sym.value}, expecting a symbol`)
-			}
+			this.openParenthesis()
+
+			let sym = this.symbol()
 
 			const args = this.arguments()
-			this.lex.eat() // comsume the last ')' character
+
+			this.closeParenthesis()
 
 			const body = this.body()
 
-			this.lex.eat() // comsume the last ')' character
+			this.closeParenthesis()
 
-			return { type: 'define', name: { type: 'symbol', value: sym.value }, value: { type: 'lambda', arguments: args, body } }
+			return { type: 'define', name: sym, value: { type: 'lambda', arguments: args, body } }
 		}
 
 		// define a symbol
-		let sym = this.lex.eat()
-		if (!this.assertToken(sym, 'symbol')) {
-			throw SyntaxError(`Unexpected token: ${sym.value}, expecting a symbol`)
-		}
+		let sym = this.symbol()
 
 		let value: ASTNode
 		if (this.assertToken(this.lex.lookahead(), 'punctuation', '(')) {
@@ -292,30 +293,20 @@ export class Parser {
 			value = this.literal()
 		}
 
-		let t = this.lex.eat() // comsume remainding ')' character
-		if (!this.assertToken(t, 'punctuation', ')')) {
-			throw SyntaxError(`Unexpected token: ${t.value}`)
-		}
+		this.closeParenthesis()
 
 		return { type: 'define', name: { type: 'symbol', value: sym.value }, value }
 
 	}
 
 	private lambda(): LambdaNode {
-		let t = this.lex.eat()
-		if (!this.assertToken(t, 'punctuation', '(')) {
-			throw SyntaxError(`Unexpected token: ${t.value}`)
-		}
+		this.openParenthesis()
 		let args = this.arguments()
-		this.lex.eat() // comsume the last ')' character
+		this.closeParenthesis()
 
 		let body = this.body()
 
-		t = this.lex.eat() // comsume remainding ')' character
-		if (!this.assertToken(t, 'punctuation', ')')) {
-			throw SyntaxError(`Unexpected token: ${t.value} in lambda expression, waiting )`)
-		}
-
+		this.closeParenthesis()
 
 		return { type: 'lambda', arguments: args, body }
 	}
@@ -328,7 +319,7 @@ export class Parser {
 			if (this.assertToken(t, 'symbol')) {
 				args.push({ type: 'symbol', value: t.value })
 			} else {
-				throw SyntaxError(`Unexpected token: ${t.value}, cannot be used as an argument name`)
+				throw new ParserError(`Unexpected token: ${t.value}, cannot be used as an argument name`, t)
 			}
 			l = this.lex.lookahead()
 		}
@@ -340,7 +331,6 @@ export class Parser {
 		const parameters: ASTNode[] = []
 
 		while (!this.assertToken(l, 'punctuation', ')')) {
-			this.assertEof(l)
 			if (this.assertToken(l, 'punctuation', '(')) {
 				parameters.push(this.sExpression())
 			} else {
@@ -363,18 +353,15 @@ export class Parser {
 		} else if (this.assertToken(t, 'number')) {
 			return { type: 'number', value: parseFloat(t.value) }
 		} else {
-			throw Error(`Unexpected token: ${t.value} literal`)
+			throw new ParserError(`Unexpected token: ${t.value} literal`, t)
 		}
 	}
 
 	private quoted(): QuotedNode {
-		let t = this.lex.eat()
-		if (!this.assertToken(t, 'symbol')) {
-			throw Error(`Unexpected token: ${t.value}, can only quote symbols`)
-		}
+		const sym = this.symbol()
 		return {
 			type: 'quoted',
-			value: { type: 'symbol', value: t.value }
+			value: sym
 		}
 		// if (this.assertToken(l, 'punctuation', '(')) {
 		// 	this.lex.eat()
