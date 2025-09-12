@@ -1,4 +1,4 @@
-import { Parser, type ASTNode, type BeginNode, type ConditionalNode, type DefineNode, type LambdaNode, type SetNode, type sExpNode, type StatementNode } from "./Parser";
+import { Parser, ParserError, type ASTNode, type BeginNode, type ConditionalNode, type DefineNode, type LambdaNode, type SetNode, type sExpNode, type StatementNode } from "./Parser";
 
 export type SymbolValue = {
 	type: 'symbol',
@@ -65,13 +65,14 @@ export class Environment {
 }
 
 export class Interpreter {
-	ast: ASTNode[]
+	ast: ASTNode[] = []
 	output: string[] = []
 
 	genv = new Environment()
+	input: string;
 
 	constructor(input: string) {
-		this.ast = new Parser(input).Parse()
+		this.input = input
 	}
 
 	builtinFunctions: {
@@ -252,12 +253,19 @@ export class Interpreter {
 	/* Entry point of the interpreter, use this function to start the evaluation
 	*/
 	interpret() {
-		for (const statement of this.ast) {
-			try {
-				this.output.push(this.evaluate(statement, this.genv).value.toString())
-			} catch (error) {
-				this.output.push((error as Error).message)
+
+		try {
+			this.ast = new Parser(this.input).Parse()
+
+			for (const statement of this.ast) {
+				try {
+					this.output.push(this.evaluate(statement, this.genv).value.toString())
+				} catch (error) {
+					this.output.push((error as Error).message)
+				}
 			}
+		} catch (error) {
+			this.output.push((error as ParserError).message)
 		}
 		return this.output
 	}
