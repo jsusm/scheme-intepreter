@@ -17,7 +17,7 @@ export class Lexer {
 	tokens: [string | RegExp, string][] = [
 		[/^\;;.*\n/, 'comment'],
 		[/^\;;.*$/, 'comment'],
-		[/^\n+/, 'eol'],
+		[/^\n/, 'eol'],
 		[/^[\f\r\t\v\u0020\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]+/, 'whitespace'],
 		['(', 'punctuation'],
 		[')', 'punctuation'],

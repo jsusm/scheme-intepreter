@@ -67,12 +67,16 @@ export class Environment {
 export class Interpreter {
 	ast: ASTNode[] = []
 	output: string[] = []
+	error: string = ""
 
 	genv = new Environment()
 	input: string;
 
-	constructor(input: string) {
+	constructor(input: string, env?: Environment) {
 		this.input = input
+		if (env) {
+			this.genv = env;
+		}
 	}
 
 	builtinFunctions: {
@@ -260,12 +264,13 @@ export class Interpreter {
 			for (const statement of this.ast) {
 				try {
 					this.output.push(this.evaluate(statement, this.genv).value.toString())
+					this.error = ""
 				} catch (error) {
-					this.output.push((error as Error).message)
+					this.error = (error as Error).message
 				}
 			}
 		} catch (error) {
-			this.output.push((error as ParserError).message)
+			this.error = (error as Error).message
 		}
 		return this.output
 	}
