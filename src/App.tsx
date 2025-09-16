@@ -1,11 +1,11 @@
-import { Debug } from "./components/Debug"
-import { Demo } from "./components/Demo"
+import { Debug } from "./components/Debug";
+import { Demo } from "./components/Demo";
 
 function App() {
-  if (window.location.pathname === '/debug') {
-    return <Debug />
+  if (window.location.pathname === "/debug") {
+    return <Debug />;
   }
-  return <Demo />
+  return <Demo />;
 }
 
-export default App
+export default App;

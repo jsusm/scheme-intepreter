@@ -2,7 +2,11 @@ import { useRef } from "react";
 import { cn } from "../lib/cn";
 import { hightlightCode } from "../lib/hightlightCode";
 
-export function CodeArea(props: { code: string, setCode(code: string): void, className?: string }) {
+export function CodeArea(props: {
+  code: string;
+  setCode(code: string): void;
+  className?: string;
+}) {
   const preRef = useRef<HTMLPreElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -17,15 +21,28 @@ export function CodeArea(props: { code: string, setCode(code: string): void, cla
   };
 
   return (
-    <div className={cn("bg-neutral-900 rounded-xl shadow-lg border border-neutral-700 relative", props.className)}>
-      <pre ref={preRef} className="p-3 font-mono text-wrap absolute inset-0 pointer-events-none overflow-hidden" dangerouslySetInnerHTML={{ __html: hightlightCode(props.code) }}>{}</pre>
+    <div
+      className={cn(
+        "bg-neutral-900 rounded-xl shadow-lg border border-neutral-700 relative",
+        props.className,
+      )}
+    >
+      <pre
+        ref={preRef}
+        className="p-3 font-mono text-wrap absolute inset-0 pointer-events-none overflow-hidden"
+        dangerouslySetInnerHTML={{ __html: hightlightCode(props.code) }}
+      >
+        {}
+      </pre>
       <textarea
         ref={textareaRef}
         onScroll={handleScroll}
         spellCheck="false"
         value={props.code}
-        onChange={e => props.setCode(e.target.value)}
-        className='caret-white w-full text-transparent rounded-xl outline-none ring-transparent ring-2 ring-offset-neutral-800 ring-offset-2 focus:ring-blue-600/50 transition p-3 font-mono' data-gramm="false"></textarea>
+        onChange={(e) => props.setCode(e.target.value)}
+        className="caret-white w-full text-transparent rounded-xl outline-none ring-transparent ring-2 ring-offset-neutral-800 ring-offset-2 focus:ring-blue-600/50 transition p-3 font-mono"
+        data-gramm="false"
+      ></textarea>
     </div>
-  )
+  );
 }
