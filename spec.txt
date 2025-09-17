@@ -1,0 +1,34 @@
+atoms:
+boolean: #f
+numbers: 123
+strings: "hello world"
+symbols: x
+lists: '(this is a list with seven symbols)
+function: function 2
+
+expressions:
+(<operator> <parameters>)
+
+especial forms:
+(define <symbols> <value>)
+(lambda (<arguments>) <body>)
+(lambda (<arguments> . <reminder arguments>) <body>)
+(if (<condition>) <then> <else>)
+(set! <symbol> <new value>)
+(and <conditions>)
+(or <conditions>)
+(cons <car> <cdr>)
+
+syntactic shugar
+(cond ((<cond>) <body>) (<cond>) <body>) ...)
+(let ((<symbol> <value>) (<symbol> <value>) ... ) <body>)
+(define (<fn name> <arguments>) <body>)
+(define (<fn name> <arguments> . <reminder argument>) <body>)
+
+TODO:
+
+-  Add nil data type
+
+-  Add list function
+
+-  Add helpers for data types

@@ -39,7 +39,7 @@ export function CodeArea(props: {
         onScroll={handleScroll}
         spellCheck="false"
         value={props.code}
-        onChange={(e) => props.setCode(e.target.value)}
+        onChange={(e) => { props.setCode(e.target.value); handleScroll() }}
         className="caret-white w-full text-transparent rounded-xl outline-none ring-transparent ring-2 ring-offset-neutral-800 ring-offset-2 focus:ring-blue-600/50 transition p-3 font-mono"
         data-gramm="false"
       ></textarea>

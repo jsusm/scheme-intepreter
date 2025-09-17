@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
-import { Environment, Interpreter } from "../lib/Interpreter";
+import { Interpreter } from "../lib/Interpreter";
+import { Environment } from "../lib/Environment";
 import { CodeBlockEditor } from "./CodeBlockEditor";
 
 export type CodeBlockState = {
@@ -53,12 +54,12 @@ export function NotebookEditor() {
         codeBlocks.map((b, idx) =>
           idx == blockIdx
             ? {
-                ...b,
-                output,
-                error,
-                executionOrder: lastExecution,
-                hide: false,
-              }
+              ...b,
+              output,
+              error,
+              executionOrder: lastExecution,
+              hide: false,
+            }
             : b,
         ),
       );

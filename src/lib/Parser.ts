@@ -1,4 +1,6 @@
+import type { ListValue, PrimitiveValue } from "./InterpreterDataTypes";
 import { Lexer, type BareTokenType, type TokenType } from "./Lexer";
+import type { ASTNode, BeginNode, ConditionalNode, DefineNode, LambdaNode, StatementNode, StringNode, SymbolNode, NumberNode, QuotedNode, SetNode, ConsNode, FunctionNameNode, LiteralValues, sExpNode, LiteralNode, ListNode } from "./ParserNodeTypes";
 
 export class ParserError extends Error {
   name = "ParserError";
@@ -10,100 +12,38 @@ export class ParserError extends Error {
   }
 }
 
-export type SymbolNode = {
-  type: "symbol";
-  value: string;
-};
-
-export type NumberNode = {
-  type: "number";
-  value: number;
-};
-
-export type ConditionalNode = {
-  type: "conditional";
-  condition: ASTNode;
-  then: ASTNode;
-  else: ASTNode;
-};
-
-export type StringNode = {
-  type: "string";
-  value: string;
-};
-
-export type DefineNode = {
-  type: "define";
-  name: SymbolNode;
-  value: ASTNode;
-};
-
-export type BeginNode = {
-  type: "begin";
-  body: StatementNode[];
-};
-
-export type SetNode = {
-  type: "set";
-  name: SymbolNode;
-  value: ASTNode;
-};
-
-export type StatementNode =
-  | sExpNode
-  | DefineNode
-  | LambdaNode
-  | ConditionalNode
-  | BeginNode
-  | SetNode;
-
-export type LambdaNode = {
-  type: "lambda";
-  arguments: SymbolNode[];
-  body: StatementNode[];
-};
-
-export type QuotedNode = {
-  type: "quoted";
-  value: SymbolNode;
-};
-
-export type sExpNode = {
-  type: "sExpression";
-  identifier: SymbolNode;
-  parameters: ASTNode[];
-};
-
-export type ASTNode =
-  | SymbolNode
-  | NumberNode
-  | StringNode
-  | DefineNode
-  | LambdaNode
-  | QuotedNode
-  | sExpNode
-  | ConditionalNode
-  | BeginNode
-  | SetNode;
-
 export class Parser {
   /*  GRAMMAR TO IMPLEMENT
    *
    * Program::
-   *   literal
-   *   literal Program
-   *   sExpression
-   *   sExpression Program
+   *  Statement
+   *  Statement Program
    *
-   * sExpressions::
+   * Statement:
+   *  Expression
+   *  Atom
+   *
+   * Atom:
+   *  number
+   *  string
+   *  symbol
+   *
+   * Expression::
    *  (symbol Parameters)
    *  (symbol)
    *  (lambda arguments body)
    *  (define name value)
    *  (define (name arguments) body)
-   *  (if cond then else)
+   *  (if condition then else)
    *  (begin body)
-   *  (set symbol value)
+   *  (set! symbol value)
+   *  (cond (Conditions))
+   *  (cons car cdr)
+   * 
+   * Conditions::
+   *  (condition body)
+   *  (condition body) Conditions
+   *  (else body)
    *
    * body::
    *   sExpression
@@ -129,11 +69,11 @@ export class Parser {
    *
    * quoted::
    *	  symbol
-   *	  (list)
+   *	  list
    *
    * list::
    *   ''
-   *   literal
+   *   list
    *	 literal list
    */
 
@@ -155,6 +95,19 @@ export class Parser {
     }
   }
 
+  private openParenthesis() {
+    let t = this.lex.eat();
+    if (!(t.type == "punctuation" && t.value == "(")) {
+      throw new ParserError(`Unexpected Token: ${t.value}, expectin '('`, t);
+    }
+  }
+  private closeParenthesis() {
+    let t = this.lex.eat();
+    if (!(t.type == "punctuation" && t.value == ")")) {
+      throw new ParserError(`Unexpected Token: ${t.value}, expectin ')'`, t);
+    }
+  }
+
   /* Throw errors if we encounter End of file token
    */
   // private assertEof(token: TokenType) {
@@ -169,47 +122,39 @@ export class Parser {
     return this.Program();
   }
 
+  Statement(): LiteralNode | QuotedNode | StatementNode | ListNode {
+    let l = this.lex.lookahead()
+    if (
+      l.type == "symbol" ||
+      l.type == "number" ||
+      l.type == "string"
+    ) {
+      return this.literal();
+    }
+    if (l.type == "punctuation" && l.value == "'") {
+      return this.quoted()
+    } else {
+      return this.sExpression();
+    }
+  }
+
   private Program() {
     const expressions: ASTNode[] = [];
     let l = this.lex.lookahead();
     while (!this.assertToken(l, "EOF")) {
-      if (
-        l.type == "symbol" ||
-        l.type == "number" ||
-        l.type == "string" ||
-        (l.type == "punctuation" && l.value == "'")
-      ) {
-        expressions.push(this.literal());
-      } else {
-        expressions.push(this.sExpression());
-      }
+      expressions.push(this.Statement())
       l = this.lex.lookahead();
     }
     return expressions;
   }
 
-  private openParenthesis() {
-    let t = this.lex.eat();
-    if (!(t.type == "punctuation" && t.value == "(")) {
-      throw new ParserError(`Unexpected Token: ${t.value}, expectin '('`, t);
-    }
-  }
-  private closeParenthesis() {
-    let t = this.lex.eat();
-    if (!(t.type == "punctuation" && t.value == ")")) {
-      throw new ParserError(`Unexpected Token: ${t.value}, expectin ')'`, t);
-    }
-  }
-
   private sExpression(): StatementNode {
     this.openParenthesis();
+    let identifier: FunctionNameNode
 
-    const identifier = this.lex.eat();
-    if (!(identifier.type == "keyword" || identifier.type == "symbol")) {
-      throw SyntaxError(`Unexpected token: ${identifier.value}`);
-    }
-    if (identifier.type == "keyword") {
-      switch (identifier.value) {
+    const t = this.lex.eat();
+    if (t.type == "keyword") {
+      switch (t.value) {
         case "lambda":
           return this.lambda();
         case "define":
@@ -220,12 +165,24 @@ export class Parser {
           return this.begin();
         case "set":
           return this.set();
+        case 'cons':
+          return this.cons();
         default:
           throw new ParserError(
-            `Keyword not supported ${identifier.value}`,
-            identifier,
+            `Keyword not supported ${t.value}`,
+            t,
           );
       }
+    } else if (this.assertToken(t, 'punctuation', '(')) {
+      const t = this.lex.eat()
+      if (!this.assertToken(t, 'keyword', 'lambda')) {
+        throw new ParserError("Expecting a lambda declaration", t)
+      }
+      identifier = this.lambda()
+    } else if (t.type == 'symbol') {
+      identifier = { type: 'symbol', value: t.value }
+    } else {
+      throw new ParserError("Expecting a symbol, keyword or lambda declaration", t)
     }
     const parameters = this.Parameters();
 
@@ -233,9 +190,18 @@ export class Parser {
 
     return {
       type: "sExpression",
-      identifier: { type: "symbol", value: identifier.value },
+      identifier: identifier,
       parameters,
     };
+  }
+
+  private cons(): ConsNode {
+    const car = this.Statement()
+    const cdr = this.Statement()
+
+    this.closeParenthesis()
+
+    return { type: 'list', car, cdr }
   }
 
   private body(): Array<StatementNode> {
@@ -262,25 +228,13 @@ export class Parser {
     const sym = this.symbol();
     let value: ASTNode;
 
-    if (this.assertToken(this.lex.lookahead(), "punctuation", "(")) {
-      value = this.sExpression();
-    } else {
-      value = this.literal();
-    }
+    value = this.Statement()
 
     this.closeParenthesis(); // comsume remainding ')' character
 
     return { type: "set", name: sym, value: value };
   }
 
-  private parseValue(): ASTNode {
-    const l = this.lex.lookahead();
-    if (this.assertToken(l, "punctuation", "(")) {
-      return this.sExpression();
-    } else {
-      return this.literal();
-    }
-  }
 
   private begin(): BeginNode {
     const body = this.body();
@@ -291,9 +245,9 @@ export class Parser {
   }
 
   private conditional(): ConditionalNode {
-    const condition = this.parseValue();
-    const then = this.parseValue();
-    const _else = this.parseValue();
+    const condition = this.Statement();
+    const then = this.Statement();
+    const _else = this.Statement();
 
     this.closeParenthesis();
 
@@ -326,11 +280,7 @@ export class Parser {
     let sym = this.symbol();
 
     let value: ASTNode;
-    if (this.assertToken(this.lex.lookahead(), "punctuation", "(")) {
-      value = this.sExpression();
-    } else {
-      value = this.literal();
-    }
+    value = this.Statement()
 
     this.closeParenthesis();
 
@@ -376,21 +326,14 @@ export class Parser {
     const parameters: ASTNode[] = [];
 
     while (!this.assertToken(l, "punctuation", ")")) {
-      if (this.assertToken(l, "punctuation", "(")) {
-        parameters.push(this.sExpression());
-      } else {
-        parameters.push(this.literal());
-      }
+      parameters.push(this.Statement())
       l = this.lex.lookahead();
     }
     return parameters;
   }
 
-  private literal(): StringNode | SymbolNode | NumberNode | QuotedNode {
+  private literal(): StringNode | SymbolNode | NumberNode {
     let t = this.lex.eat();
-    if (this.assertToken(t, "punctuation", "'")) {
-      return this.quoted();
-    }
     if (this.assertToken(t, "string")) {
       return { type: "string", value: t.value };
     } else if (this.assertToken(t, "symbol")) {
@@ -402,40 +345,37 @@ export class Parser {
     }
   }
 
-  private quoted(): QuotedNode {
+  private quoted(): QuotedNode | ListNode {
+    this.lex.eat()
+    let l = this.lex.lookahead()
+
+    if (this.assertToken(l, 'punctuation', '(')) {
+      return this.list()
+    }
+
     const sym = this.symbol();
     return {
       type: "quoted",
       value: sym,
     };
-    // if (this.assertToken(l, 'punctuation', '(')) {
-    // 	this.lex.eat()
-    // 	const list = this.list()
-    // 	const closed = this.lex.eat()
-    // 	if (!this.assertToken(closed, 'punctuation', ')')) { //comsume last ) character
-    // 		throw Error(`Unexpected token: ${closed.value}`)
-    // 	}
-    // 	return {
-    // 		type: 'quoted',
-    // 		identifier: { type: 'keyword', value: 'quote' },
-    // 		parameters: list
-    // 	}
-    // } else {
-    // 	return {
-    // 		type: 'sExpression',
-    // 		identifier: { type: 'keyword', value: 'quote' },
-    // 		parameters: this.literal()
-    // 	}
-    // }
   }
 
-  // private list(): ASTNode[] {
-  // 	let l = this.lex.lookahead()
-  // 	let items = []
-  // 	while (!this.assertToken(l, 'punctuation', ')')) {
-  // 		items.push(this.literal())
-  // 		l = this.lex.lookahead()
-  // 	}
-  // 	return items
-  // }
+  private list(): ListNode {
+    this.openParenthesis()
+    const list = []
+    let l = this.lex.lookahead()
+    while (!this.assertToken(l, 'punctuation', ')')) {
+      if (this.assertToken(l, 'punctuation', '(')) {
+        list.push(this.list())
+      }
+      else list.push(this.literal())
+
+      l = this.lex.lookahead()
+    }
+    this.closeParenthesis()
+    return {
+      type: 'literalListNode',
+      values: list
+    }
+  }
 }

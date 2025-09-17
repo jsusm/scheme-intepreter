@@ -29,6 +29,7 @@ export class Lexer {
     ["if", "keyword"],
     ["begin", "keyword"],
     ["set", "keyword"],
+    ["cons", "keyword"],
     ["'", "punctuation"],
     [/^[+-]?\d+\.\d*/, "number"],
     [/^[+-]?\d+/, "number"],

@@ -1,81 +1,21 @@
+import { Environment } from "./Environment.ts";
+import { isTruthyValue, primitiveValueToString, type ListValue, type PrimitiveValue } from "./InterpreterDataTypes.ts";
+import { nativeFunctionRepository } from "./nativeInterpreterFunctions.ts";
 import {
   Parser,
+} from "./Parser";
+import {
   type ASTNode,
   type BeginNode,
   type ConditionalNode,
   type DefineNode,
   type LambdaNode,
+  type ConsNode,
   type SetNode,
   type sExpNode,
-  type StatementNode,
-} from "./Parser";
-
-export type SymbolValue = {
-  type: "symbol";
-  value: string;
-};
-
-export type PrimitiveValue =
-  | SymbolValue
-  | {
-    type: "string";
-    value: string;
-  }
-  | {
-    type: "number";
-    value: number;
-  }
-  | {
-    type: "function";
-    params: SymbolValue[];
-    body: StatementNode[];
-    value: string;
-    env: Environment;
-  };
-
-export class Environment {
-  env: {
-    [key: string]: PrimitiveValue;
-  } = {};
-  parent?: Environment;
-  constructor(parentEnv?: Environment) {
-    this.parent = parentEnv;
-  }
-
-  lookupVariableValue(key: string): PrimitiveValue {
-    const value = this.env[key];
-    if (!value) {
-      if (this.parent) return this.parent.lookupVariableValue(key);
-      else throw Error("Undefined Symbol");
-    } else {
-      return value;
-    }
-  }
-
-  defineVariable(key: string, value: PrimitiveValue) {
-    this.env[key] = value;
-  }
-
-  setVariableValue(key: string, value: PrimitiveValue) {
-    if (this.env[key] === undefined) {
-      if (!this.parent) {
-        throw Error(
-          "Undefined Variable, try to use a variable that is not defined",
-        );
-      }
-      this.parent.setVariableValue(key, value);
-    }
-    this.env[key] = value;
-  }
-
-  extendEnv() {
-    return new Environment(this);
-  }
-
-  print() {
-    console.log(this.env);
-  }
-}
+  type ListNode,
+  type LiteralNode,
+} from './ParserNodeTypes.ts'
 
 export class Interpreter {
   ast: ASTNode[] = [];
@@ -90,6 +30,12 @@ export class Interpreter {
     if (env) {
       this.genv = env;
     }
+    // load native functions
+    try {
+      this.genv.lookupVariableValue('nativeFunctionsLoaded')
+    } catch (error) {
+      nativeFunctionRepository.loadNativeFunctionsIntoEnvironment(this.genv)
+    }
   }
 
   builtinFunctions: {
@@ -98,151 +44,7 @@ export class Interpreter {
       fn: (params: PrimitiveValue[], env: Environment) => PrimitiveValue;
     };
   } = {
-      "+": {
-        params: 2,
-        fn: (params: PrimitiveValue[]) => {
-          let res = 0;
-          for (let v of params) {
-            if (v.type != "number") {
-              throw Error("Can only sum numbers");
-            }
-            res += v.value;
-          }
-          return { type: "number", value: res };
-        },
-      },
-      "-": {
-        params: [1, 2],
-        fn: (params: PrimitiveValue[]) => {
-          if (params[0].type != "number") {
-            throw Error("Can only subtract numbers");
-          }
-          if (params.length == 1) {
-            return { type: "number", value: -params[0].value };
-          }
-          if (params[1].type != "number") {
-            throw Error("Can only subtract numbers");
-          }
-          return { type: "number", value: params[0].value - params[1].value };
-        },
-      },
-      "*": {
-        params: 2,
-        fn: (params: PrimitiveValue[]) => {
-          let res = 1;
-          for (let v of params) {
-            if (v.type != "number") {
-              throw Error("Can only sum numbers");
-            }
-            res *= v.value;
-          }
-          return { type: "number", value: res };
-        },
-      },
-      "/": {
-        params: [2],
-        fn: (params: PrimitiveValue[]) => {
-          if (params[0].type != "number") {
-            throw Error("Can only divide numbers");
-          }
-          if (params[1].type != "number") {
-            throw Error("Can only divide numbers");
-          }
-          return { type: "number", value: params[0].value / params[1].value };
-        },
-      },
-      print: {
-        params: 1,
-        fn: (params) => {
-          let result = "";
-          for (let p of params) {
-            result += p.value + " ";
-          }
-          this.output.push(result);
-          return { type: "symbol", value: "ok" };
-        },
-      },
-      "=": {
-        params: 2,
-        fn: (params) => {
-          let equals = true;
-          for (let i = 1; i < params.length; i++) {
-            equals =
-              params[i - 1].type == params[i].type &&
-              params[i - 1].value == params[i].value;
-            if (!equals) {
-              return { type: "symbol", value: "false" };
-            }
-          }
-          return { type: "symbol", value: "true" };
-        },
-      },
-      ">": {
-        params: [2],
-        fn: (params) => {
-          if (params[0].type == "number" && params[1].type == "number") {
-            if (params[0].value > params[1].value) {
-              return { type: "symbol", value: "true" };
-            } else {
-              return { type: "symbol", value: "false" };
-            }
-          } else {
-            throw Error("Can only compare numbers");
-          }
-        },
-      },
-      "<": {
-        params: [2],
-        fn: (params) => {
-          if (params[0].type == "number" && params[1].type == "number") {
-            if (params[0].value < params[1].value) {
-              return { type: "symbol", value: "true" };
-            } else {
-              return { type: "symbol", value: "false" };
-            }
-          } else {
-            throw Error("Can only compare numbers");
-          }
-        },
-      },
-      and: {
-        params: 2,
-        fn: (params) => {
-          let ok = true;
-          for (let i = 0; i < params.length; i++) {
-            ok = ok && this.isTruthyValue(params[i]);
-            if (!ok) {
-              return { type: "symbol", value: "false" };
-            }
-          }
-          return { type: "symbol", value: "true" };
-        },
-      },
-      or: {
-        params: 2,
-        fn: (params) => {
-          let ok = false;
-          for (let i = 0; i < params.length; i++) {
-            ok = ok || this.isTruthyValue(params[i]);
-            if (ok) {
-              return { type: "symbol", value: "true" };
-            }
-          }
-          return { type: "symbol", value: "false" };
-        },
-      },
     };
-
-  /* Used in comparisons, define if a value is consider tru
-   */
-  isTruthyValue(v: PrimitiveValue) {
-    return (
-      (v.type == "string" && v.value != "") ||
-      (v.type == "number" && v.value != 0) ||
-      (v.type == "symbol" && v.value != "false") ||
-      v.type == "function"
-    );
-  }
 
   isBuiltintFunction(fn: string) {
     return this.builtinFunctions[fn] !== undefined;
@@ -250,31 +52,6 @@ export class Interpreter {
 
   /* Distpach a function defined in this.builtinFunctions property
    */
-  dispachBuiltInFunction(
-    functionName: string,
-    params: PrimitiveValue[],
-    env: Environment,
-  ): PrimitiveValue {
-    const fn = this.builtinFunctions[functionName];
-    if (fn === undefined) {
-      throw new Error(`Unknow function: ${functionName}`);
-    }
-    if (typeof fn.params == "number") {
-      if (params.length < fn.params) {
-        throw Error(
-          `The function ${functionName} need at least ${fn.params} arguments`,
-        );
-      }
-      return fn.fn(params, env);
-    }
-    if (fn.params.includes(params.length)) {
-      return fn.fn(params, env);
-    } else {
-      throw new Error(
-        `The function ${functionName} does not accept ${fn.params.length} arguments`,
-      );
-    }
-  }
 
   /* Entry point of the interpreter, use this function to start the evaluation
    */
@@ -285,7 +62,7 @@ export class Interpreter {
       for (const statement of this.ast) {
         try {
           this.output.push(
-            this.evaluate(statement, this.genv).value.toString(),
+            primitiveValueToString(this.evaluate(statement, this.genv))
           );
           this.error = "";
         } catch (error) {
@@ -326,16 +103,50 @@ export class Interpreter {
         return this.evalBegin(node, env);
       case "set":
         return this.evalSet(node, env);
+      case 'list':
+        return this.evalCons(node, env);
+      case "literalListNode":
+        return this.evalList(node, env);
       default:
         throw Error("Not supported Expression");
     }
+  }
+
+  evaluateQuouted(node: LiteralNode, env: Environment): PrimitiveValue {
+    switch (node.type) {
+      case "string":
+      case "number":
+      case "symbol":
+        return node;
+      case "literalListNode":
+        return this.evalList(node, env)
+    }
+  }
+
+  evalList(node: ListNode, env: Environment): PrimitiveValue {
+    if (node.values.length == 0) {
+      return { type: 'null' }
+    }
+    const list: ListValue = { type: 'list', car: this.evaluateQuouted(node.values[0], env), cdr: { type: 'null' } }
+    let curr = list;
+    for (let i = 1; i < node.values.length; i++) {
+      curr.cdr = { type: 'list', car: this.evaluate(node.values[i], env), cdr: { type: 'null' } }
+      curr = curr.cdr
+    }
+    return list;
+  }
+
+  evalCons(node: ConsNode, env: Environment): PrimitiveValue {
+    const car = this.evaluate(node.car, env)
+    const cdr = this.evaluate(node.cdr, env)
+    return { type: 'list', car, cdr }
   }
 
   /* Evaluate a condition and execute the correspoding statement
    */
   evalConditional(node: ConditionalNode, env: Environment): PrimitiveValue {
     const conditionValue = this.evaluate(node.condition, env);
-    if (this.isTruthyValue(conditionValue)) {
+    if (isTruthyValue(conditionValue)) {
       return this.evaluate(node.then, env);
     } else {
       return this.evaluate(node.else, env);
@@ -347,7 +158,6 @@ export class Interpreter {
       type: "function",
       params: node.arguments,
       body: node.body,
-      value: `function ${node.arguments.length}`,
       env,
     };
   }
@@ -377,39 +187,41 @@ export class Interpreter {
   apply(node: sExpNode, env: Environment): PrimitiveValue {
     //evaluate parameters
     const paramsValues = node.parameters.map((p) => this.evaluate(p, env));
-    console.log("appling", node.identifier.value, "with", paramsValues);
+    let fn
 
-    if (this.isBuiltintFunction(node.identifier.value)) {
-      return this.dispachBuiltInFunction(
-        node.identifier.value,
-        paramsValues,
-        env,
-      );
+    if (node.identifier.type == 'lambda') {
+      fn = this.evaluate(node.identifier, env)
+      console.log("appling anonimus function with", paramsValues);
     } else {
-      // check if the identifier is a function
-      const fn = env.lookupVariableValue(node.identifier.value);
-      if (fn.type == "function") {
-        // extend the current environment
-        const newEnv = fn.env.extendEnv();
-        // check how meny params was passed
-        if (fn.params.length !== paramsValues.length) {
-          throw Error(
-            `Cannot run a function of ${fn.params.length} with ${paramsValues.length} arguments`,
-          );
-        }
-        // define the parameters as variables in the extended environment
-        for (let i = 0; i < fn.params.length; i++) {
-          newEnv.defineVariable(fn.params[i].value, paramsValues[i]);
-        }
+      fn = env.lookupVariableValue(node.identifier.value)
+      console.log("appling", node.identifier.value, "with", paramsValues);
+    }
 
-        // execute the statements
-        for (let i = 0; i < fn.body.length - 1; i++) {
-          this.evaluate(fn.body[i], newEnv);
-        }
-        return this.evaluate(fn.body[fn.body.length - 1], newEnv);
-      } else {
-        throw Error(`The function ${fn.value} is not defined`);
+    if (fn.type == 'nativeFunction') {
+      return nativeFunctionRepository.executeNativeFunction(fn.name, paramsValues, env, this.output)
+    } else if (fn.type == "function") {
+      // extend the current environment
+      const newEnv = fn.env.extendEnv();
+      console.log(fn.params, paramsValues)
+      // check how meny params was passed
+      if (fn.params.length !== paramsValues.length) {
+        throw Error(
+          `Cannot run a function of ${fn.params.length} with ${paramsValues.length} arguments`,
+        );
       }
+      // define the parameters as variables in the extended environment
+      for (let i = 0; i < fn.params.length; i++) {
+        newEnv.defineVariable(fn.params[i].value, paramsValues[i]);
+      }
+
+      // execute the statements
+      for (let i = 0; i < fn.body.length - 1; i++) {
+        this.evaluate(fn.body[i], newEnv);
+      }
+
+      return this.evaluate(fn.body[fn.body.length - 1], newEnv);
+    } else {
+      throw Error(`The function ${primitiveValueToString(fn)} is not defined`);
     }
   }
 }
