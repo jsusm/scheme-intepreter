@@ -7,16 +7,16 @@ export function CodeArea(props: {
   setCode(code: string): void;
   className?: string;
 }) {
-  const preRef = useRef<HTMLPreElement>(null);
+  const hightlightedCodeDivRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // This handler will be triggered when the user scrolls the textarea
   const handleScroll = () => {
-    if (textareaRef.current && preRef.current) {
+    if (textareaRef.current && hightlightedCodeDivRef.current) {
       // Synchronize the scrollTop property of the pre element
-      preRef.current.scrollTop = textareaRef.current.scrollTop;
+      hightlightedCodeDivRef.current.scrollTop = textareaRef.current.scrollTop;
       // Synchronize the scrollLeft property of the pre element
-      preRef.current.scrollLeft = textareaRef.current.scrollLeft;
+      hightlightedCodeDivRef.current.scrollLeft = textareaRef.current.scrollLeft;
     }
   };
 
@@ -27,20 +27,27 @@ export function CodeArea(props: {
         props.className,
       )}
     >
-      <pre
-        ref={preRef}
+      <div
+        ref={hightlightedCodeDivRef}
         className="p-3 font-mono text-wrap absolute inset-0 pointer-events-none overflow-hidden"
-        dangerouslySetInnerHTML={{ __html: hightlightCode(props.code) }}
       >
-        {}
-      </pre>
+        {hightlightCode(props.code).split('\n').map(line => (
+          <pre
+            className="h-6 text-wrap"
+            dangerouslySetInnerHTML={{ __html: line }}
+          >
+            {}
+          </pre>
+
+        ))}
+      </div>
       <textarea
         ref={textareaRef}
         onScroll={handleScroll}
         spellCheck="false"
         value={props.code}
         onChange={(e) => { props.setCode(e.target.value); handleScroll() }}
-        className="caret-white w-full text-transparent rounded-xl outline-none ring-transparent ring-2 ring-offset-neutral-800 ring-offset-2 focus:ring-blue-600/50 transition p-3 font-mono"
+        className="caret-white w-full text-white/10 rounded-xl outline-none ring-transparent ring-2 ring-offset-neutral-800 ring-offset-2 focus:ring-blue-600/50 transition p-3 font-mono"
         data-gramm="false"
       ></textarea>
     </div>
