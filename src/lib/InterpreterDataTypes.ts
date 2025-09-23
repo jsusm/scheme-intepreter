@@ -10,6 +10,10 @@ export type ListValue = {
   car: PrimitiveValue;
   cdr: PrimitiveValue;
 }
+export type BooleanValue = {
+  type: "boolean";
+  value: boolean;
+}
 export type NativeFunction = {
   type: "nativeFunction";
   name: string;
@@ -19,6 +23,7 @@ export type PrimitiveValue =
   | SymbolValue
   | ListValue
   | NativeFunction
+  | BooleanValue
   | {
     type: "string";
     value: string;
@@ -44,6 +49,9 @@ export function primitiveValueToString(v: PrimitiveValue): string {
     case "string":
     case "symbol":
       return v.value
+    case "boolean":
+      if (v.value) return '#t';
+      else return '#f'
     case "function":
       return `function ${v.params.length}`
     case "list":
@@ -72,6 +80,7 @@ export function isTruthyValue(v: PrimitiveValue) {
     (v.type == "string" && v.value != "") ||
     (v.type == "number" && v.value != 0) ||
     (v.type == "symbol" && v.value != "false") ||
+    (v.type == "boolean" && v.value) ||
     v.type == "function" ||
     v.type == 'list'
   );

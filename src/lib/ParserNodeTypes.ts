@@ -3,6 +3,11 @@ export type SymbolNode = {
   value: string;
 };
 
+export type BooleanNode = {
+  type: "boolean";
+  value: boolean;
+};
+
 export type NumberNode = {
   type: "number";
   value: number;
@@ -25,9 +30,9 @@ export type ListNode = {
   values: LiteralNode[]
 }
 
-export type LiteralNode = SymbolNode | NumberNode | StringNode | ListNode
+export type LiteralNode = SymbolNode | NumberNode | StringNode | ListNode | BooleanNode
 
-export type Atom = SymbolNode | NumberNode | StringNode | ConsNode | QuotedNode
+export type Atom = BooleanNode | SymbolNode | NumberNode | StringNode | ConsNode | QuotedNode
 
 // normal form nodes
 
@@ -95,5 +100,6 @@ export type ASTNode =
   | BeginNode
   | SetNode
   | ListNode
+  | BooleanNode
   | ConsNode;
 

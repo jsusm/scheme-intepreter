@@ -127,6 +127,7 @@ export class Parser {
     if (
       l.type == "symbol" ||
       l.type == "number" ||
+      l.type == "boolean" ||
       l.type == "string"
     ) {
       return this.literal();
@@ -163,7 +164,7 @@ export class Parser {
           return this.conditional();
         case "begin":
           return this.begin();
-        case "set":
+        case "set!":
           return this.set();
         case 'cons':
           return this.cons();
@@ -204,12 +205,11 @@ export class Parser {
     return { type: 'list', car, cdr }
   }
 
-  private body(): Array<StatementNode> {
-    const expressions: Array<StatementNode> = [];
+  private body(): Array<LiteralNode | QuotedNode | StatementNode | ListNode> {
+    const expressions: Array<LiteralNode | QuotedNode | StatementNode | ListNode> = [];
     while (!this.assertToken(this.lex.lookahead(), "punctuation", ")")) {
-      expressions.push(this.sExpression());
+      expressions.push(this.Statement());
     }
-
     return expressions;
   }
 
@@ -336,6 +336,8 @@ export class Parser {
     let t = this.lex.eat();
     if (this.assertToken(t, "string")) {
       return { type: "string", value: t.value };
+    } else if (this.assertToken(t, "boolean")) {
+      return { type: "boolean", value: t.value == '#t' };
     } else if (this.assertToken(t, "symbol")) {
       return { type: "symbol", value: t.value };
     } else if (this.assertToken(t, "number")) {

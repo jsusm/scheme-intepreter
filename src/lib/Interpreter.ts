@@ -81,6 +81,7 @@ export class Interpreter {
     // self evaluating values
     switch (node.type) {
       case "string":
+      case "boolean":
       case "number":
         return node;
       case "symbol":

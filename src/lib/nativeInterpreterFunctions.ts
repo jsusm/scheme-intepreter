@@ -103,6 +103,17 @@ const divition: NativeFunction = (params, _env, _output) => {
 }
 nativeFunctionRepository.addFunction('/', [2], divition)
 
+const modulo: NativeFunction = (params, _env, _output) => {
+  if (params[0].type != "number") {
+    throw Error("Can only apply modulo on numbers");
+  }
+  if (params[1].type != "number") {
+    throw Error("Can only apply modulo on numbers");
+  }
+  return { type: "number", value: params[0].value % params[1].value };
+}
+nativeFunctionRepository.addFunction('/', [2], divition)
+
 const equal: NativeFunction = (params, _env, _output) => {
   let equals = true;
   if (params[0].type == 'function' || params[0].type == 'list') {
@@ -116,10 +127,10 @@ const equal: NativeFunction = (params, _env, _output) => {
       params[i - 1].type == params[i].type &&
       (params[i - 1] as SymbolNode | NumberNode).value == (params[i] as SymbolNode | NumberNode).value;
     if (!equals) {
-      return { type: "symbol", value: "false" };
+      return { type: "boolean", value: false };
     }
   }
-  return { type: "symbol", value: "true" };
+  return { type: "boolean", value: true };
 }
 nativeFunctionRepository.addFunction('=', 2, equal)
 
@@ -129,16 +140,16 @@ const print: NativeFunction = (params, _env, output) => {
     result += primitiveValueToString(p) + " ";
   }
   output.push(result);
-  return { type: "symbol", value: "ok" };
+  return { type: "null" };
 }
 nativeFunctionRepository.addFunction('print', 1, print)
 
 const mt: NativeFunction = (params, _env, _output) => {
   if (params[0].type == "number" && params[1].type == "number") {
     if (params[0].value > params[1].value) {
-      return { type: "symbol", value: "true" };
+      return { type: "boolean", value: true };
     } else {
-      return { type: "symbol", value: "false" };
+      return { type: "boolean", value: false };
     }
   } else {
     throw Error("Can only compare numbers");
@@ -149,9 +160,9 @@ nativeFunctionRepository.addFunction('>', [2], mt)
 const lt: NativeFunction = (params, _env, _output) => {
   if (params[0].type == "number" && params[1].type == "number") {
     if (params[0].value < params[1].value) {
-      return { type: "symbol", value: "true" };
+      return { type: "boolean", value: true };
     } else {
-      return { type: "symbol", value: "false" };
+      return { type: "boolean", value: false };
     }
   } else {
     throw Error("Can only compare numbers");
@@ -164,10 +175,10 @@ const and: NativeFunction = (params, _env, _output) => {
   for (let i = 0; i < params.length; i++) {
     ok = ok && isTruthyValue(params[i]);
     if (!ok) {
-      return { type: "symbol", value: "false" };
+      return { type: "boolean", value: false };
     }
   }
-  return { type: "symbol", value: "true" };
+  return { type: "boolean", value: true };
 }
 nativeFunctionRepository.addFunction('and', 2, and)
 
@@ -176,10 +187,10 @@ const or: NativeFunction = (params, _env, _output) => {
   for (let i = 0; i < params.length; i++) {
     ok = ok || isTruthyValue(params[i]);
     if (ok) {
-      return { type: "symbol", value: "true" };
+      return { type: "boolean", value: true };
     }
   }
-  return { type: "symbol", value: "false" };
+  return { type: "boolean", value: false };
 }
 nativeFunctionRepository.addFunction('or', 2, or)
 
@@ -216,46 +227,46 @@ nativeFunctionRepository.addFunction('list', 0, list)
 
 const isNull: NativeFunction = (params, _env, _output) => {
   if (params[0].type == 'null') {
-    return { type: 'symbol', value: 'true' }
+    return { type: 'boolean', value: true }
   }
-  return { type: 'symbol', value: 'false' }
+  return { type: 'boolean', value: false }
 }
 nativeFunctionRepository.addFunction('null?', [1], isNull)
 
 const isString: NativeFunction = (params, _env, _output) => {
   if (params[0].type == 'string') {
-    return { type: 'symbol', value: 'true' }
+    return { type: 'boolean', value: true }
   }
-  return { type: 'symbol', value: 'false' }
+  return { type: 'boolean', value: false }
 }
 nativeFunctionRepository.addFunction('string?', [1], isString)
 
 const isNumber: NativeFunction = (params, _env, _output) => {
   if (params[0].type == 'number') {
-    return { type: 'symbol', value: 'true' }
+    return { type: 'boolean', value: true }
   }
-  return { type: 'symbol', value: 'false' }
+  return { type: 'boolean', value: false }
 }
 nativeFunctionRepository.addFunction('number?', [1], isNumber)
 
 const isFunction: NativeFunction = (params, _env, _output) => {
   if (params[0].type == 'function') {
-    return { type: 'symbol', value: 'true' }
+    return { type: 'boolean', value: true }
   }
-  return { type: 'symbol', value: 'false' }
+  return { type: 'boolean', value: false }
 }
 nativeFunctionRepository.addFunction('function?', [1], isFunction)
 
 const isList: NativeFunction = (params, _env, _output) => {
   if (params[0].type == 'list') {
-    return { type: 'symbol', value: 'true' }
+    return { type: 'boolean', value: true }
   }
-  return { type: 'symbol', value: 'false' }
+  return { type: 'boolean', value: false }
 }
 nativeFunctionRepository.addFunction('list?', [1], isList)
 
 const nativeFunctionsLoaded: NativeFunction = () => {
-  return { type: 'symbol', value: 'true' }
+  return { type: 'boolean', value: true }
 }
 nativeFunctionRepository.addFunction('nativeFunctionsLoaded', [0], nativeFunctionsLoaded)
 

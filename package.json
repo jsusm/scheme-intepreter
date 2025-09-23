@@ -11,16 +11,23 @@
     "format": "prettier -w ."
   },
   "dependencies": {
+    "@base-ui-components/react": "1.0.0-beta.3",
     "@fontsource-variable/chivo-mono": "^5.2.7",
     "@fontsource-variable/inter": "^5.2.6",
     "@fontsource-variable/jetbrains-mono": "^5.2.7",
+    "@tailwindcss/typography": "^0.5.18",
     "@tailwindcss/vite": "^4.1.13",
+    "@types/insane": "^1.0.0",
     "clsx": "^2.1.1",
+    "insane": "^2.6.2",
     "inter": "link:@types/fontsource-variable/inter",
+    "marked": "^16.3.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "react-textarea-autosize": "^8.5.9",
     "tailwind-merge": "^3.3.1",
-    "tailwindcss": "^4.1.13"
+    "tailwindcss": "^4.1.13",
+    "use-debounce": "^10.0.6"
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",
