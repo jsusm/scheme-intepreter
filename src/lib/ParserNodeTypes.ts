@@ -19,20 +19,30 @@ export type StringNode = {
 };
 
 export type ConsNode = {
-  type: "list",
-  car: StatementNode | Atom | ListNode,
-  cdr: StatementNode | Atom | ListNode,
-}
-
+  type: "list";
+  car: StatementNode | Atom | ListNode;
+  cdr: StatementNode | Atom | ListNode;
+};
 
 export type ListNode = {
-  type: 'literalListNode',
-  values: LiteralNode[]
-}
+  type: "literalListNode";
+  values: LiteralNode[];
+};
 
-export type LiteralNode = SymbolNode | NumberNode | StringNode | ListNode | BooleanNode
+export type LiteralNode =
+  | SymbolNode
+  | NumberNode
+  | StringNode
+  | ListNode
+  | BooleanNode;
 
-export type Atom = BooleanNode | SymbolNode | NumberNode | StringNode | ConsNode | QuotedNode
+export type Atom =
+  | BooleanNode
+  | SymbolNode
+  | NumberNode
+  | StringNode
+  | ConsNode
+  | QuotedNode;
 
 // normal form nodes
 
@@ -68,12 +78,11 @@ export type StatementNode =
   | ConsNode
   | SetNode;
 
-
 export type QuotedNode = {
   type: "quoted";
   value: SymbolNode;
 };
-export type FunctionNameNode = SymbolNode | LambdaNode
+export type FunctionNameNode = SymbolNode | LambdaNode;
 
 export type sExpNode = {
   type: "sExpression";
@@ -102,4 +111,3 @@ export type ASTNode =
   | ListNode
   | BooleanNode
   | ConsNode;
-

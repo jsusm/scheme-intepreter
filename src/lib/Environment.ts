@@ -27,7 +27,7 @@ export class Environment {
     if (this.env[key] === undefined) {
       if (!this.parent) {
         throw Error(
-          "Undefined Variable, try to use a variable that is not defined"
+          "Undefined Variable, try to use a variable that is not defined",
         );
       }
       this.parent.setVariableValue(key, value);
@@ -43,4 +43,3 @@ export class Environment {
     console.log(this.env);
   }
 }
-

@@ -10,10 +10,10 @@ export function after(milliseconds: number, fn: () => void) {
 
 export function NotebookEditor() {
   const lastEnvRef = useRef(new Environment());
-  const [noteBookEditorState, noteBookEditorDispatch] = useNoteBookState()
+  const [noteBookEditorState, noteBookEditorDispatch] = useNoteBookState();
 
   function computeOutput(blockIdx: number) {
-    noteBookEditorDispatch({ type: 'hideOuput', payload: { idx: blockIdx } });
+    noteBookEditorDispatch({ type: "hideOuput", payload: { idx: blockIdx } });
     const interpreter = new Interpreter(
       noteBookEditorState.codeBlocks[blockIdx].code,
       lastEnvRef.current,
@@ -25,8 +25,14 @@ export function NotebookEditor() {
       lastEnvRef.current = interpreter.genv;
     }
     after(250, () => {
-      noteBookEditorDispatch({ type: 'setOutput', payload: { error, output, idx: blockIdx } });
-      noteBookEditorDispatch({ type: 'showOutput', payload: { idx: blockIdx } });
+      noteBookEditorDispatch({
+        type: "setOutput",
+        payload: { error, output, idx: blockIdx },
+      });
+      noteBookEditorDispatch({
+        type: "showOutput",
+        payload: { idx: blockIdx },
+      });
     });
   }
 
@@ -36,15 +42,22 @@ export function NotebookEditor() {
         <CodeBlockEditor
           key={b.id}
           onRun={() => computeOutput(idx)}
-          onCodeUpdate={(v) => noteBookEditorDispatch({ type: "changeCode", payload: { idx, code: v } })}
-          onDelete={() => noteBookEditorDispatch({ type: 'removeBlock', payload: { idx } })}
+          onCodeUpdate={(v) =>
+            noteBookEditorDispatch({
+              type: "changeCode",
+              payload: { idx, code: v },
+            })
+          }
+          onDelete={() =>
+            noteBookEditorDispatch({ type: "removeBlock", payload: { idx } })
+          }
           block={b}
         />
       ))}
       <div>
         <button
           className="w-full h-12 border border-neutral-600 text-neutral-300 hover:bg-neutral-200/10 transition rounded-xl"
-          onClick={() => noteBookEditorDispatch({ type: 'addBlock' })}
+          onClick={() => noteBookEditorDispatch({ type: "addBlock" })}
         >
           New Code block +
         </button>

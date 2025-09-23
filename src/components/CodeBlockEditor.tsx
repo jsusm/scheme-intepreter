@@ -59,7 +59,7 @@ export function CodeBlockEditor({
       <div className="flex-1 flex flex-col gap-2">
         <CodeArea code={block.code} setCode={(v) => onCodeUpdate(v)} />
         <div
-          style={{ scrollbarWidth: 'none' }}
+          style={{ scrollbarWidth: "none" }}
           className={cn(
             "min-h-18 max-h-32 w-full bg-neutral-900 rounded-xl shadow-lg border border-neutral-700 p-2 overflow-scroll text-wrap transition",
             block.hide ? "opacity-0" : "opacity-100",

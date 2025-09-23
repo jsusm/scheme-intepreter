@@ -1,5 +1,5 @@
 import { Lexer } from "./Lexer";
-import insane from "insane"
+import insane from "insane";
 
 function span(className: string, content: string) {
   return `<span class="${className}">${content}</span>`;
@@ -48,14 +48,14 @@ export function hightlightCode(code: string) {
         if (t.value == "(") {
           out += span(
             parenthesisLevelClasses[
-            parenthesisLevel % parenthesisLevelClasses.length
+              parenthesisLevel % parenthesisLevelClasses.length
             ],
             t.value,
           );
         } else if (t.value == ")") {
           out += span(
             parenthesisLevelClasses[
-            (parenthesisLevel - 1) % parenthesisLevelClasses.length
+              (parenthesisLevel - 1) % parenthesisLevelClasses.length
             ],
             t.value,
           );

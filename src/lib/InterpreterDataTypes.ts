@@ -9,15 +9,15 @@ export type ListValue = {
   type: "list";
   car: PrimitiveValue;
   cdr: PrimitiveValue;
-}
+};
 export type BooleanValue = {
   type: "boolean";
   value: boolean;
-}
+};
 export type NativeFunction = {
   type: "nativeFunction";
   name: string;
-}
+};
 
 export type PrimitiveValue =
   | SymbolValue
@@ -25,53 +25,51 @@ export type PrimitiveValue =
   | NativeFunction
   | BooleanValue
   | {
-    type: "string";
-    value: string;
-  }
+      type: "string";
+      value: string;
+    }
   | {
-    type: "number";
-    value: number;
-  }
+      type: "number";
+      value: number;
+    }
   | {
-    type: "function";
-    params: SymbolValue[];
-    body: StatementNode[];
-    env: Environment;
-  }
+      type: "function";
+      params: SymbolValue[];
+      body: StatementNode[];
+      env: Environment;
+    }
   | {
-    type: 'null';
-  };
+      type: "null";
+    };
 
 export function primitiveValueToString(v: PrimitiveValue): string {
   switch (v.type) {
     case "number":
-      return v.value.toString()
+      return v.value.toString();
     case "string":
     case "symbol":
-      return v.value
+      return v.value;
     case "boolean":
-      if (v.value) return '#t';
-      else return '#f'
+      if (v.value) return "#t";
+      else return "#f";
     case "function":
-      return `function ${v.params.length}`
+      return `function ${v.params.length}`;
     case "list":
-      let value = `(${primitiveValueToString(v.car)}`
-      if (v.cdr.type == 'list') {
-        value += " " + primitiveValueToString(v.cdr).slice(1)
-      } else if (v.cdr.type == 'null') {
-        value += ')'
+      let value = `(${primitiveValueToString(v.car)}`;
+      if (v.cdr.type == "list") {
+        value += " " + primitiveValueToString(v.cdr).slice(1);
+      } else if (v.cdr.type == "null") {
+        value += ")";
       } else {
-        value += ` ${primitiveValueToString(v.cdr)})`
+        value += ` ${primitiveValueToString(v.cdr)})`;
       }
-      return value
+      return value;
     case "null":
-      return ''
+      return "";
     case "nativeFunction":
-      return "nativeFunction: " + v.name
+      return "nativeFunction: " + v.name;
   }
 }
-
-
 
 /* Used in comparisons, define if a value is consider tru
  */
@@ -82,6 +80,6 @@ export function isTruthyValue(v: PrimitiveValue) {
     (v.type == "symbol" && v.value != "false") ||
     (v.type == "boolean" && v.value) ||
     v.type == "function" ||
-    v.type == 'list'
+    v.type == "list"
   );
 }

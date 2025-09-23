@@ -1,8 +1,12 @@
 import { useEffect } from "react";
 import { hightlightCode } from "../lib/hightlightCode";
 import { NotebookEditor } from "./NotebookEditor";
-import { ScrollArea } from "@base-ui-components/react/scroll-area"
-import { marked, type RendererObject, type TokenizerAndRendererExtension } from "marked"
+import { ScrollArea } from "@base-ui-components/react/scroll-area";
+import {
+  marked,
+  type RendererObject,
+  type TokenizerAndRendererExtension,
+} from "marked";
 
 const content = `
 # (Tutorial of my flavour of Scheme)
@@ -368,113 +372,124 @@ de forma análoga podemos definir pi-sum
 ~*[Ejercicio][calcula pi-sum desde 1 hasta 10000, y multiplica por 8, se acerca a pi?]{
 (* 8 (pi-sum 1 10000))
 }
-`
-
+`;
 
 export function Demo() {
   const renderer: RendererObject = {
     code({ text }) {
-      const hightlightedCode = hightlightCode(text)
+      const hightlightedCode = hightlightCode(text);
 
       return `<pre class="text-base"><code>${hightlightedCode}</code></pre>`;
     },
     codespan({ text }) {
-      const hightlightedCode = hightlightCode(text)
+      const hightlightedCode = hightlightCode(text);
 
       return `<code>${hightlightedCode}</code>`;
-    }
-  }
+    },
+  };
 
   const testExtension: TokenizerAndRendererExtension = {
-    name: 'test',
-    level: 'block',
-    start(src) { return src.match(/\~\[/)?.index },
+    name: "test",
+    level: "block",
+    start(src) {
+      return src.match(/\~\[/)?.index;
+    },
     tokenizer(src, _tokens) {
-      const rule = /^~\[([^\n\]]+)\]\[([^\]]+)\]/
-      const match = src.match(rule)
+      const rule = /^~\[([^\n\]]+)\]\[([^\]]+)\]/;
+      const match = src.match(rule);
       if (match) {
         const token = {
-          type: 'test',
+          type: "test",
           raw: match[0],
           title: match[1],
-          desc: this.lexer.inlineTokens(match[2].trim())
-        }
-        return token
+          desc: this.lexer.inlineTokens(match[2].trim()),
+        };
+        return token;
       }
     },
     renderer(token) {
-      return (
-        `<p class="p-2 border border-neutral-700 rounded-lg bg-neutral-800">
+      return `<p class="p-2 border border-neutral-700 rounded-lg bg-neutral-800">
 <span class="font-mono text-blue-400">${token.title}:</span> ${this.parser.parseInline(token.desc)}
-</p>`
-      )
+</p>`;
     },
-    childTokens: ['desc']
-  }
+    childTokens: ["desc"],
+  };
 
   const testWithHintExtension: TokenizerAndRendererExtension = {
-    name: 'testWithHint',
-    level: 'block',
-    start(src) { return src.match(/\~\*\[/)?.index },
+    name: "testWithHint",
+    level: "block",
+    start(src) {
+      return src.match(/\~\*\[/)?.index;
+    },
     tokenizer(src, _tokens) {
-      const rule = /^~\*\[([^\n\]]+)\]\[([^\]]+)\]\{([^}]+)\}/
-      const match = src.match(rule)
+      const rule = /^~\*\[([^\n\]]+)\]\[([^\]]+)\]\{([^}]+)\}/;
+      const match = src.match(rule);
       if (match) {
         const token = {
-          type: 'testWithHint',
+          type: "testWithHint",
           raw: match[0],
           title: match[1],
           code: match[3].trim(),
           desc: this.lexer.inlineTokens(match[2].trim()),
-        }
-        return token
+        };
+        return token;
       }
     },
     renderer(token) {
-      return (
-        `<div class="p-2 border border-neutral-700 rounded-lg bg-neutral-800 testWithHint">
+      return `<div class="p-2 border border-neutral-700 rounded-lg bg-neutral-800 testWithHint">
 <p class="mt-0 mb-0">
 <span class="font-mono text-blue-400">${token.title}:</span> ${this.parser.parseInline(token.desc)} <button class="font-mono font-medium text-blue-400 hover:text-blue-300 testWithHintToggle">[Show response]</button>
 </p>
 <pre class="mt-2 mb-0 testWithHintCode hidden"><code>${hightlightCode(token.code)}</code></pre>
 </div>
-`
-      )
+`;
     },
-    childTokens: ['desc']
-  }
-
+    childTokens: ["desc"],
+  };
 
   useEffect(() => {
-    const testWithHintElements = document.getElementsByClassName("testWithHint") as HTMLCollectionOf<HTMLDivElement>
-    const buttonCallbacks: Array<{ button: HTMLButtonElement, cb: () => void }> = []
+    const testWithHintElements = document.getElementsByClassName(
+      "testWithHint",
+    ) as HTMLCollectionOf<HTMLDivElement>;
+    const buttonCallbacks: Array<{
+      button: HTMLButtonElement;
+      cb: () => void;
+    }> = [];
     for (const element of testWithHintElements) {
-      const toggleButton = element.querySelector('.testWithHintToggle') as HTMLButtonElement | null
-      const code = element.querySelector('.testWithHintCode') as HTMLPreElement | null
+      const toggleButton = element.querySelector(
+        ".testWithHintToggle",
+      ) as HTMLButtonElement | null;
+      const code = element.querySelector(
+        ".testWithHintCode",
+      ) as HTMLPreElement | null;
       const handleClick = () => {
-        console.log(code)
-        code?.classList.toggle('hidden')
-      }
+        console.log(code);
+        code?.classList.toggle("hidden");
+      };
       if (toggleButton) {
-        toggleButton?.addEventListener('click', handleClick)
-        buttonCallbacks.push({ button: toggleButton, cb: handleClick })
+        toggleButton?.addEventListener("click", handleClick);
+        buttonCallbacks.push({ button: toggleButton, cb: handleClick });
       }
     }
     // TODO: Solve code duplication
     return () => {
       for (const b of buttonCallbacks) {
-        b.button.removeEventListener('click', b.cb)
+        b.button.removeEventListener("click", b.cb);
       }
-    }
-  }, [])
+    };
+  }, []);
 
-  marked.use({ renderer, extensions: [testExtension, testWithHintExtension] })
-  const tutorialContent = marked.parse(content)
-  console.log(tutorialContent)
+  marked.use({ renderer, extensions: [testExtension, testWithHintExtension] });
+  const tutorialContent = marked.parse(content);
+  console.log(tutorialContent);
   return (
     <div className="bg-neutral-950 min-h-screen text-white p-4 space-y-8 dark">
       <div className=" max-w-[1200px] mx-auto flex justify-between items-center">
-        <h1 className="text-lg font-medium font-mono"><span className="text-red-200">(</span><span className="text-red-400">Scheme</span> Interpreter By Jesus Marcano<span className="text-red-200">)</span></h1>
+        <h1 className="text-lg font-medium font-mono">
+          <span className="text-red-200">(</span>
+          <span className="text-red-400">Scheme</span> Interpreter By Jesus
+          Marcano<span className="text-red-200">)</span>
+        </h1>
         <div>
           <p className="font-mono font-medium">[ Hide Tutorial ]</p>
         </div>

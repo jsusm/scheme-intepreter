@@ -1,9 +1,12 @@
 import { Environment } from "./Environment.ts";
-import { isTruthyValue, primitiveValueToString, type ListValue, type PrimitiveValue } from "./InterpreterDataTypes.ts";
-import { nativeFunctionRepository } from "./nativeInterpreterFunctions.ts";
 import {
-  Parser,
-} from "./Parser";
+  isTruthyValue,
+  primitiveValueToString,
+  type ListValue,
+  type PrimitiveValue,
+} from "./InterpreterDataTypes.ts";
+import { nativeFunctionRepository } from "./nativeInterpreterFunctions.ts";
+import { Parser } from "./Parser";
 import {
   type ASTNode,
   type BeginNode,
@@ -15,7 +18,7 @@ import {
   type sExpNode,
   type ListNode,
   type LiteralNode,
-} from './ParserNodeTypes.ts'
+} from "./ParserNodeTypes.ts";
 
 export class Interpreter {
   ast: ASTNode[] = [];
@@ -32,9 +35,9 @@ export class Interpreter {
     }
     // load native functions
     try {
-      this.genv.lookupVariableValue('nativeFunctionsLoaded')
+      this.genv.lookupVariableValue("nativeFunctionsLoaded");
     } catch (error) {
-      nativeFunctionRepository.loadNativeFunctionsIntoEnvironment(this.genv)
+      nativeFunctionRepository.loadNativeFunctionsIntoEnvironment(this.genv);
     }
   }
 
@@ -43,8 +46,7 @@ export class Interpreter {
       params: number[] | number;
       fn: (params: PrimitiveValue[], env: Environment) => PrimitiveValue;
     };
-  } = {
-    };
+  } = {};
 
   isBuiltintFunction(fn: string) {
     return this.builtinFunctions[fn] !== undefined;
@@ -62,7 +64,7 @@ export class Interpreter {
       for (const statement of this.ast) {
         try {
           this.output.push(
-            primitiveValueToString(this.evaluate(statement, this.genv))
+            primitiveValueToString(this.evaluate(statement, this.genv)),
           );
           this.error = "";
         } catch (error) {
@@ -104,7 +106,7 @@ export class Interpreter {
         return this.evalBegin(node, env);
       case "set":
         return this.evalSet(node, env);
-      case 'list':
+      case "list":
         return this.evalCons(node, env);
       case "literalListNode":
         return this.evalList(node, env);
@@ -120,27 +122,35 @@ export class Interpreter {
       case "symbol":
         return node;
       case "literalListNode":
-        return this.evalList(node, env)
+        return this.evalList(node, env);
     }
   }
 
   evalList(node: ListNode, env: Environment): PrimitiveValue {
     if (node.values.length == 0) {
-      return { type: 'null' }
+      return { type: "null" };
     }
-    const list: ListValue = { type: 'list', car: this.evaluateQuouted(node.values[0], env), cdr: { type: 'null' } }
+    const list: ListValue = {
+      type: "list",
+      car: this.evaluateQuouted(node.values[0], env),
+      cdr: { type: "null" },
+    };
     let curr = list;
     for (let i = 1; i < node.values.length; i++) {
-      curr.cdr = { type: 'list', car: this.evaluate(node.values[i], env), cdr: { type: 'null' } }
-      curr = curr.cdr
+      curr.cdr = {
+        type: "list",
+        car: this.evaluate(node.values[i], env),
+        cdr: { type: "null" },
+      };
+      curr = curr.cdr;
     }
     return list;
   }
 
   evalCons(node: ConsNode, env: Environment): PrimitiveValue {
-    const car = this.evaluate(node.car, env)
-    const cdr = this.evaluate(node.cdr, env)
-    return { type: 'list', car, cdr }
+    const car = this.evaluate(node.car, env);
+    const cdr = this.evaluate(node.cdr, env);
+    return { type: "list", car, cdr };
   }
 
   /* Evaluate a condition and execute the correspoding statement
@@ -188,22 +198,27 @@ export class Interpreter {
   apply(node: sExpNode, env: Environment): PrimitiveValue {
     //evaluate parameters
     const paramsValues = node.parameters.map((p) => this.evaluate(p, env));
-    let fn
+    let fn;
 
-    if (node.identifier.type == 'lambda') {
-      fn = this.evaluate(node.identifier, env)
+    if (node.identifier.type == "lambda") {
+      fn = this.evaluate(node.identifier, env);
       console.log("appling anonimus function with", paramsValues);
     } else {
-      fn = env.lookupVariableValue(node.identifier.value)
+      fn = env.lookupVariableValue(node.identifier.value);
       console.log("appling", node.identifier.value, "with", paramsValues);
     }
 
-    if (fn.type == 'nativeFunction') {
-      return nativeFunctionRepository.executeNativeFunction(fn.name, paramsValues, env, this.output)
+    if (fn.type == "nativeFunction") {
+      return nativeFunctionRepository.executeNativeFunction(
+        fn.name,
+        paramsValues,
+        env,
+        this.output,
+      );
     } else if (fn.type == "function") {
       // extend the current environment
       const newEnv = fn.env.extendEnv();
-      console.log(fn.params, paramsValues)
+      console.log(fn.params, paramsValues);
       // check how meny params was passed
       if (fn.params.length !== paramsValues.length) {
         throw Error(
