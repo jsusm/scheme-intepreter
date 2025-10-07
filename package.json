@@ -13,10 +13,10 @@
 	},
 	"dependencies": {
 		"@base-ui-components/react": "1.0.0-beta.3",
-		"@fontsource-variable/chivo-mono": "^5.2.7",
-		"@fontsource-variable/inter": "^5.2.6",
-		"@fontsource-variable/jetbrains-mono": "^5.2.7",
-		"@tailwindcss/typography": "^0.5.18",
+		"@fontsource-variable/chivo-mono": "^5.2.8",
+		"@fontsource-variable/inter": "^5.2.8",
+		"@fontsource-variable/jetbrains-mono": "^5.2.8",
+		"@tailwindcss/typography": "^0.5.19",
 		"@tailwindcss/vite": "^4.1.13",
 		"@types/insane": "^1.0.0",
 		"clsx": "^2.1.1",
@@ -32,16 +32,16 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.2.4",
-		"@eslint/js": "^9.33.0",
-		"@types/react": "^19.1.10",
-		"@types/react-dom": "^19.1.7",
-		"@vitejs/plugin-react-swc": "^4.0.0",
-		"eslint": "^9.33.0",
+		"@eslint/js": "^9.36.0",
+		"@types/react": "^19.1.16",
+		"@types/react-dom": "^19.1.9",
+		"@vitejs/plugin-react-swc": "^4.1.0",
+		"eslint": "^9.36.0",
 		"eslint-plugin-react-hooks": "^5.2.0",
-		"eslint-plugin-react-refresh": "^0.4.20",
-		"globals": "^16.3.0",
+		"eslint-plugin-react-refresh": "^0.4.22",
+		"globals": "^16.4.0",
 		"typescript": "~5.8.3",
-		"typescript-eslint": "^8.39.1",
-		"vite": "^7.1.2"
+		"typescript-eslint": "^8.45.0",
+		"vite": "^7.1.7"
 	}
 }

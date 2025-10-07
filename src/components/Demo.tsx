@@ -9,7 +9,7 @@ import { hightlightCode } from "../lib/hightlightCode";
 import { NotebookEditor } from "./NotebookEditor";
 
 const content = `
-# (Tutorial of my flavour of Scheme)
+# Tutorial de mi sabor de scheme
 
 Hola, en esta guía aprenderás Scheme, a tu derecha tienes un editor de código por bloques en el que puedes
 escribir código y ejecutarlo, puedes crear más bloque de código y ejecutarlos por separado, las variables y
@@ -28,7 +28,7 @@ Scheme es un lenguaje minimalista, familia del lenguaje Lisp, que con pocas
 reglas para formar expresiones soporta varios paradigmas de programación que 
 usamos hoy en día.
 
-## (Tipos de datos)
+## Tipos de datos
 
 Para crear programas necesitamos representar la información de alguna forma, esta
 implementación de Scheme soporta
@@ -487,17 +487,13 @@ export function Demo() {
 			<div className=" max-w-[1200px] mx-auto flex justify-between items-center">
 				<h1 className="text-lg font-medium font-mono">
 					<span className="text-red-200">(</span>
-					<span className="text-red-400">Scheme</span> Interpreter By Jesus
-					Marcano<span className="text-red-200">)</span>
+					<span className="text-red-400">Scheme</span> Interpreter<span className="text-red-200">)</span>
 				</h1>
-				<div>
-					<p className="font-mono font-medium">[ Hide Tutorial ]</p>
-				</div>
 			</div>
-			<div className="grid grid-cols-2 justify-center gap-4 max-w-[1200px] mx-auto">
+			<div className="grid grid-cols-1 sm:grid-cols-2 justify-center gap-4 max-w-[1200px] mx-auto">
 				<NotebookEditor />
-				<div className="sticky top-4 h-min">
-					<ScrollArea.Root className="bg-neutral-900 rounded-xl px-6 py-4 text-neutral-200 space-y-8 h-[90dvh]">
+				<div className="sm:sticky top-4 h-min">
+					<ScrollArea.Root className="bg-neutral-900 rounded-xl px-6 py-4 text-neutral-200 space-y-8 h-[500px] sm:h-[90dvh]">
 						<ScrollArea.Viewport className="h-full overscroll-contain rounded-md">
 							<div
 								className="mx-auto prose prose-stone dark:prose-invert prose-headings:font-mono prose-h1:font-medium"
